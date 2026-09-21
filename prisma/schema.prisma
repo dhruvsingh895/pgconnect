@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+enum Role {
+  OWNER
+  TENANT
+}
+model User {
+  id String @id @default(uuid())
+  email String? @unique
+  phoneHash String? @unique
+  phoneEncrypted String?
+  passwordHash String?
+  name String
+  role Role
+  propertyId String?
+  property Property? @relation(fields:[propertyId], references:[id])
+  room String @default("")
+  bed String @default("")
+  moveIn String @default("")
+  rent Int @default(0)
+  deposit Int @default(0)
+  createdAt DateTime @default(now())
+  sessions Session[]
+  rents Rent[]
+  complaints Complaint[]
+  documents Document[]
+  notifications Notification[]
+  reads AnnouncementRead[]
+}
+model Property {
+  id String @id @default(uuid())
+  name String
+  address String
+  rooms Int
+  beds Int
+  food Boolean @default(true)
+  code String @unique
+  notifications Boolean @default(true)
+  revision Int @default(0)
+  users User[]
+  rents Rent[]
+  complaints Complaint[]
+  announcements Announcement[]
+  menu MenuDay[]
+  paymentAccounts PaymentAccount[]
+}
+model Rent {
+  id String @id @default(uuid())
+  propertyId String
+  property Property @relation(fields:[propertyId],references:[id])
+  tenantId String
+  tenant User @relation(fields:[tenantId],references:[id])
+  month String
+  amount Int
+  dueDate String
+  paidAt String?
+  paymentOrder PaymentOrder?
+  @@unique([tenantId,month])
+  @@index([propertyId,month])
+}
+model Complaint {
+  id String @id @default(uuid())
+  propertyId String
+  property Property @relation(fields:[propertyId],references:[id])
+  tenantId String
+  tenant User @relation(fields:[tenantId],references:[id])
+  title String
+  description String
+  category String
+  priority String
+  status String @default("Open")
+  createdAt DateTime @default(now())
+  photo String?
+  notes Json @default("[]")
+  @@index([propertyId,status])
+}
+model Announcement {
+  id String @id @default(uuid())
+  propertyId String
+  property Property @relation(fields:[propertyId],references:[id])
+  title String
+  body String
+  audience String
+  image String?
+  createdAt DateTime @default(now())
+  reads AnnouncementRead[]
+  @@index([propertyId,createdAt])
+}
+model AnnouncementRead {
+  announcementId String
+  announcement Announcement @relation(fields:[announcementId],references:[id],onDelete:Cascade)
+  userId String
+  user User @relation(fields:[userId],references:[id])
+  @@id([announcementId,userId])
+}
+model MenuDay {
+  id String @id @default(uuid())
+  propertyId String
+  property Property @relation(fields:[propertyId],references:[id])
+  day String
+  breakfast String
+  lunch String
+  dinner String
+  @@unique([propertyId,day])
+}
+model Notification {
+  id String @id @default(uuid())
+  tenantId String
+  tenant User @relation(fields:[tenantId],references:[id])
+  text String
+  createdAt DateTime @default(now())
+  read Boolean @default(false)
+}
+model Document {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields:[userId],references:[id])
+  key String @unique
+  name String
+  contentType String
+  size Int
+  purpose String
+  verified Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+model Session {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  family String
+  tokenHash String @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  @@index([family])
+}
+model Otp {
+  phoneHash String @id
+  codeHash String
+  expiresAt DateTime
+  attempts Int @default(0)
+}
+model RateLimit {
+  key String @id
+  count Int @default(1)
+  resetAt DateTime
+}
+
+model PaymentAccount {
+  id String @id @default(uuid())
+  propertyId String
+  property Property @relation(fields:[propertyId], references:[id])
+  keyId String
+  secretEncrypted String
+  webhookSecretEncrypted String
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  orders PaymentOrder[]
+  @@index([propertyId, enabled])
+}
+
+model PaymentOrder {
+  id String @id @default(uuid())
+  rentId String @unique
+  rent Rent @relation(fields:[rentId], references:[id])
+  accountId String
+  account PaymentAccount @relation(fields:[accountId], references:[id])
+  amount Int
+  currency String @default("INR")
+  providerOrderId String? @unique
+  providerPaymentId String? @unique
+  status String @default("CREATING")
+  capturedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

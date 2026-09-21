@@ -156,6 +156,6 @@ npm run build
 npm start
 ```
 
-Use a supported Node.js release (Node 22.12+ or Node 24), PostgreSQL, HTTPS termination, and the configured production origin/secrets. `npm start` binds to localhost; the optional Docker start script binds to `0.0.0.0` and validates production configuration. Never seed real production tenants with sample data. Deploy migrations as an explicit release step.
+Use a supported Node.js release (Node 22.12+ or Node 24), PostgreSQL, HTTPS termination, and the configured production origin/secrets. `npm start` binds to localhost for local production testing; Vercel manages the production runtime. Never seed real production tenants with sample data. Deploy migrations as an explicit release step.
 
 The live application is **https://pgconnect-one.vercel.app**, hosted on Vercel Hobby with Neon Free PostgreSQL. See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment settings, verification, and future releases. Production supports email/password sign-in; SMS and S3 integrations require separate configuration. Online rent checkout uses each owner's Razorpay account: see [PAYMENTS.md](PAYMENTS.md) and connect the account under Settings → Payments.
